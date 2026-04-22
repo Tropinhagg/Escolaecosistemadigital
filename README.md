@@ -1,98 +1,128 @@
+<div align="center">
+
 # 🐾 Tropinha
 
-Plataforma educacional privada para turma de estudos. Centraliza mural de avisos, conteúdo de estudo, simulados com fiscalização e materiais.
+**Plataforma educacional privada para turmas de estudo**
 
-## Stack
+*Mural da turma · Conteúdo didático · Simulados com fiscalização · Materiais*
 
-| Camada | Tecnologia |
+---
+
+[![Status](https://img.shields.io/badge/status-ativo-34d399?style=flat-square)](https://github.com)
+[![Hospedagem](https://img.shields.io/badge/hospedagem-GitHub%20Pages-7c9ef5?style=flat-square)](https://pages.github.com)
+[![Backend](https://img.shields.io/badge/backend-Supabase-3ecf8e?style=flat-square)](https://supabase.com)
+[![Licença](https://img.shields.io/badge/acesso-privado-ef4444?style=flat-square)](#)
+
+</div>
+
+---
+
+## O que é o Tropinha?
+
+O Tropinha é um ambiente digital fechado para turmas de estudo. Pense nele como uma mistura de grupo de estudos, plataforma de simulados e repositório de materiais — tudo em um lugar só, sem anúncios, sem distrações e sem acesso público.
+
+O acesso é restrito: só entra quem o administrador cadastrar. Não há botão de "criar conta".
+
+---
+
+## O que você encontra aqui
+
+### 📋 Mural da turma
+Um feed social interno onde professores e admins postam avisos, materiais e atualizações. Os membros podem reagir com ❤️, comentar em thread (com respostas aninhadas), curtir comentários e compartilhar o link de uma publicação. Posts importantes podem ser fixados no topo.
+
+### 📚 Conteúdo
+Blocos de texto, imagens e links organizados em quatro abas temáticas: **Edital**, **Assuntos**, **Vídeos** e **Materiais**. O conteúdo é gerenciado pelos professores e admins diretamente pela interface, sem precisar mexer no banco de dados.
+
+### 🎯 Simulados
+O coração do Tropinha. Os simulados são organizados por matéria e por tipo (matéria ou geral). Existem dois comportamentos distintos dependendo do tipo:
+
+Os **simulados de matéria** permitem múltiplas tentativas — são para prática livre, sem pressão. Os **simulados gerais** têm tentativa única e se comportam como uma prova real: o gabarito é protegido no banco de dados e nunca chega ao navegador do aluno, as respostas são salvas automaticamente a cada 30 segundos, e o sistema monitora comportamentos suspeitos como troca de aba ou inatividade prolongada, emitindo advertências. Ao acumular 5 advertências, o aluno é expulso do simulado.
+
+Professores e admins têm acesso ao editor completo de questões — é possível criar questões manualmente ou importar em lote via arquivo JSON.
+
+### 📁 Materiais
+Um repositório de links externos organizados por tipo: editais, PDFs, vídeos, apresentações e sites úteis. Visível para todos os membros. Gerenciado por professores e admins.
+
+---
+
+## Quem pode fazer o quê
+
+O sistema tem três papéis de usuário:
+
+| Papel | O que pode fazer |
 |---|---|
-| Front-end | HTML + CSS + JS puro (`<script type="module">`) |
-| Back-end / Auth | [Supabase](https://supabase.com) |
-| Banco de imagens | [Cloudinary](https://cloudinary.com) |
-| Hospedagem | GitHub Pages via GitHub Actions |
+| **Aluno** | Ler tudo, reagir, comentar, fazer simulados |
+| **Professor** | Tudo do aluno + publicar no mural, gerenciar conteúdo, criar simulados e questões |
+| **Admin** | Controle total, incluindo criar usuários e resetar tentativas de simulados |
 
-## Estrutura do repositório
+---
+
+## Como funciona por baixo dos panos — visão técnica
+
+Esta seção é voltada para desenvolvedores e colaboradores que precisam entender ou manter o projeto.
+
+### Stack
+
+O projeto foi construído deliberadamente sem build tools, sem bundler e sem framework. Todo o front-end vive em um único arquivo `index.html` com CSS e JavaScript puros (`<script type="module">`). O SDK do Supabase é importado via CDN. Isso torna o repositório trivial de hospedar em qualquer CDN estático.
 
 ```
 tropinha/
-├── .github/workflows/deploy.yml   # Deploy automático no push para main
-├── public/
-│   ├── images/                    # Imagens estáticas locais
-│   └── favicon.ico
-├── .env.example                   # Referência de variáveis (nunca commitar o .env real)
-├── README.md
-└── index.html                     # Toda a aplicação — SPA autocontida
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # Deploy automático no push para main
+├── index.html              # Toda a aplicação — SPA autocontida
+├── .env.example            # Referência das variáveis (não commitar o .env real)
+└── README.md
 ```
 
-## Configuração
+### Serviços externos utilizados
 
-1. Clone o repositório.
-2. Copie `.env.example` como referência — **não crie um `.env` real commitado**.
-3. No `index.html`, preencha as constantes no topo do `<script>`:
+O projeto depende de três serviços externos, todos com plano gratuito suficiente para turmas pequenas:
 
-```js
+**Supabase** gerencia autenticação (e-mail + senha), banco de dados PostgreSQL com Row Level Security ativo em todas as tabelas, e a camada de Realtime via WebSocket para atualizações ao vivo no mural e nos comentários.
+
+**Cloudinary** armazena todas as imagens (posts, avatares, questões, blocos de conteúdo). O front-end faz upload direto usando um preset não-assinado — o banco guarda apenas a URL `secure_url` retornada. Imagens nunca são armazenadas em base64 no banco.
+
+**GitHub Pages** hospeda o `index.html` estático. O workflow `.github/workflows/deploy.yml` usa `peaceiris/actions-gh-pages@v3` para publicar automaticamente a cada push na branch `main`.
+
+### Banco de dados — tabelas principais
+
+O schema completo está documentado em `TROPINHA_SPEC_TECNICA.md`. As tabelas centrais são:
+
+`usuarios` · `publicacoes` · `reacoes` · `comentarios` · `curtidas_comentario` · `compartilhamentos` · `materiais` · `simulados` · `questoes` · `tentativas_simulado` · `logs` · `conteudo_abas` · `materias` · `sim_arquivos`
+
+Dois pontos de atenção importantes para quem for trabalhar no banco:
+
+A função `meu_role()` é usada por todas as policies de RLS para verificar o papel do usuário logado. Ela usa `SECURITY DEFINER` e `SET search_path = public` para evitar recursão circular — não remova essas configurações.
+
+A view `questoes_sem_gabarito` expõe as questões sem o campo `correta`. Ela usa `WITH (security_invoker = true)` para que o RLS seja avaliado com as permissões do usuário que consulta, e não do criador da view. Alunos acessam questões exclusivamente por essa view — a tabela `questoes` em si bloqueia acesso de alunos via policy.
+
+### Configuração das constantes
+
+As únicas variáveis de configuração ficam no topo do `<script>` dentro do `index.html`:
+
+```javascript
 const SUPABASE_URL     = 'https://xxxx.supabase.co';
 const SUPABASE_ANON    = 'sb_publishable_...';
 const CLOUDINARY_CLOUD = 'nome-do-cloud';
-const CLOUDINARY_PRESET= 'preset-nao-assinado';
+const CLOUDINARY_PRESET= 'nome-do-preset';
 const EMAIL_DOMAIN     = '@tropinha.local';
 ```
 
-4. No painel do GitHub, vá em **Settings → Pages** e configure a **Source** como **GitHub Actions**.
-5. Qualquer push no branch `main` dispara o deploy automaticamente.
+A chave `SUPABASE_ANON` é a chave pública (publishable) — é segura no front-end porque o RLS garante que cada usuário acessa apenas o que as policies permitem. Nunca use a `service_role` key no front-end nem a commite no repositório.
 
-## Schema do banco (Supabase)
+### Deploy
 
-Execute as migrações na ordem abaixo no SQL Editor do Supabase. O schema completo está na especificação do projeto (`tropinha_prompt_spec.md`). As tabelas principais são:
+O deploy é 100% automático via GitHub Actions. Basta fazer push para `main`. Para que funcione, o repositório precisa ter **"Read and write permissions"** ativado em Settings → Actions → General, e o GitHub Pages configurado para **"Deploy from a branch → gh-pages"** em Settings → Pages.
 
-- `usuarios` — identidade dos usuários (espelha `auth.users`)
-- `publicacoes` — posts do mural
-- `reacoes` — curtidas em publicações
-- `comentarios` — threads de comentários
-- `curtidas_comentario` — curtidas em comentários
-- `compartilhamentos` — registro de compartilhamentos
-- `materiais` — links externos (PDFs, editais, vídeos…)
-- `simulados` — metadados dos simulados
-- `questoes` — perguntas dos simulados
-- `tentativas_simulado` — progresso de cada aluno
-- `logs` — auditoria imutável
-- `conteudo_abas` — blocos de conteúdo rico (Edital, Assuntos, Vídeos…)
-- `materias` — agrupamento de simulados por disciplina
-- `sim_arquivos` — arquivos vinculados a simulados
+### Criando usuários
 
-**Importante:** habilite RLS em todas as tabelas antes de criar as policies. A função `meu_role()` deve ser criada com `SECURITY DEFINER` para evitar recursão circular nas policies.
+Como o site é privado, usuários são criados pelo admin diretamente no painel do Supabase em **Authentication → Users**. O e-mail deve seguir o formato `apelido@tropinha.local` (ou o `EMAIL_DOMAIN` configurado). Um trigger no banco cria automaticamente a linha correspondente em `public.usuarios` — mas o admin deve ajustar `nome` e `role` manualmente via SQL depois.
 
-## Roles de usuário
+---
 
-| Role | Permissões |
-|---|---|
-| `aluno` | Lê conteúdo, faz simulados, reage e comenta |
-| `professor` | Tudo do aluno + publica no mural, gerencia conteúdo e materiais |
-| `admin` | Controle total, incluindo criar usuários e resetar tentativas |
+<div align="center">
 
-## Criando usuários
+*Tropinha — feito com 🐾 para quem estuda junto.*
 
-Como o site é privado, usuários são criados pelo admin diretamente no painel do Supabase (Authentication → Users), usando o e-mail no formato `apelido@tropinha.local` (ou o `EMAIL_DOMAIN` configurado). Após criar o usuário no Auth, insira a linha correspondente em `public.usuarios` com `apelido`, `nome` e `role`.
-
-## Regras importantes
-
-- **Nunca** envie chaves secretas para o repositório. Apenas `SUPABASE_ANON` e o preset não-assinado do Cloudinary são seguros no front-end.
-- **Nunca** armazene imagens em base64 no banco. Todas as imagens passam pelo Cloudinary.
-- Todo conteúdo do banco passa pela função `esc()` antes de qualquer `innerHTML` para prevenir XSS.
-- Toda nova tabela precisa de RLS habilitado + policies antes de entrar em produção.
-
-## Desenvolvimento local
-
-Abra `index.html` diretamente no navegador ou use um servidor estático simples:
-
-```bash
-npx serve .
-# ou
-python3 -m http.server 3000
-```
-
-## Deploy
-
-O deploy é 100% automático via GitHub Actions. Basta fazer push para `main`. O workflow `.github/workflows/deploy.yml` faz o checkout e publica a raiz do repositório no GitHub Pages usando `peaceiris/actions-gh-pages@v3`.
-
-**Nunca habilite** o deploy direto por branch nas configurações do GitHub Pages — isso criaria dois caminhos de deploy concorrentes.
+</div>
