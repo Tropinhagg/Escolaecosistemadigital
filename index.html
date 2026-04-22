@@ -67,9 +67,29 @@
 
     /* ===== LOGIN ===== */
     #tela-login {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 24px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+
+  /* A imagem de fundo — troque a URL pela sua imagem real */
+  background-image:
+    /* Camada 1 (mais ao topo): gradiente escuro que cobre as bordas,
+       criando o efeito de desvanecimento/vinheta */
+    radial-gradient(
+      ellipse 80% 80% at 50% 50%,
+      rgba(7,10,17,0.45) 0%,      /* centro levemente transparente */
+      rgba(7,10,17,0.80) 55%,     /* meio escurecendo */
+      rgba(7,10,17,0.97) 100%     /* bordas quase sólidas */
+    ),
+    /* Camada 2 (embaixo): a imagem real */
+    url('https://br.freepik.com/fotos-gratis/livro-na-biblioteca-com-livro-aberto_3737798.htm#fromView=keyword&page=1&position=4&uuid=fc4c645a-2a7e-4cdf-8514-07daca410025&query=Biblioteca');
+
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
     .login-card {
       background: var(--bg-2); border: 1px solid var(--border);
       border-radius: 24px; padding: 48px 44px;
