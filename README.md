@@ -1,5 +1,3 @@
-<div align="center">
-
 # 🐾 Tropinha
 
 **Plataforma educacional privada para turmas de estudo**
@@ -12,8 +10,6 @@
 [![Hospedagem](https://img.shields.io/badge/hospedagem-GitHub%20Pages-7c9ef5?style=flat-square)](https://pages.github.com)
 [![Backend](https://img.shields.io/badge/backend-Supabase-3ecf8e?style=flat-square)](https://supabase.com)
 [![Licença](https://img.shields.io/badge/acesso-privado-ef4444?style=flat-square)](#)
-
-</div>
 
 ---
 
@@ -28,12 +24,15 @@ O acesso é restrito: só entra quem o administrador cadastrar. Não há botão 
 ## O que você encontra aqui
 
 ### 📋 Mural da turma
+
 Um feed social interno onde professores e admins postam avisos, materiais e atualizações. Os membros podem reagir com ❤️, comentar em thread (com respostas aninhadas), curtir comentários e compartilhar o link de uma publicação. Posts importantes podem ser fixados no topo.
 
 ### 📚 Conteúdo
+
 Blocos de texto, imagens e links organizados em quatro abas temáticas: **Edital**, **Assuntos**, **Vídeos** e **Materiais**. O conteúdo é gerenciado pelos professores e admins diretamente pela interface, sem precisar mexer no banco de dados.
 
 ### 🎯 Simulados
+
 O coração do Tropinha. Os simulados são organizados por matéria e por tipo (matéria ou geral). Existem dois comportamentos distintos dependendo do tipo:
 
 Os **simulados de matéria** permitem múltiplas tentativas — são para prática livre, sem pressão. Os **simulados gerais** têm tentativa única e se comportam como uma prova real: o gabarito é protegido no banco de dados e nunca chega ao navegador do aluno, as respostas são salvas automaticamente a cada 30 segundos, e o sistema monitora comportamentos suspeitos como troca de aba ou inatividade prolongada, emitindo advertências. Ao acumular 5 advertências, o aluno é expulso do simulado.
@@ -41,6 +40,7 @@ Os **simulados de matéria** permitem múltiplas tentativas — são para práti
 Professores e admins têm acesso ao editor completo de questões — é possível criar questões manualmente ou importar em lote via arquivo JSON.
 
 ### 📁 Materiais
+
 Um repositório de links externos organizados por tipo: editais, PDFs, vídeos, apresentações e sites úteis. Visível para todos os membros. Gerenciado por professores e admins.
 
 ---
@@ -50,7 +50,7 @@ Um repositório de links externos organizados por tipo: editais, PDFs, vídeos, 
 O sistema tem três papéis de usuário:
 
 | Papel | O que pode fazer |
-|---|---|
+| --- | --- |
 | **Aluno** | Ler tudo, reagir, comentar, fazer simulados |
 | **Professor** | Tudo do aluno + publicar no mural, gerenciar conteúdo, criar simulados e questões |
 | **Admin** | Controle total, incluindo criar usuários e resetar tentativas de simulados |
@@ -63,15 +63,29 @@ Esta seção é voltada para desenvolvedores e colaboradores que precisam entend
 
 ### Stack
 
-O projeto foi construído deliberadamente sem build tools, sem bundler e sem framework. Todo o front-end vive em um único arquivo `index.html` com CSS e JavaScript puros (`<script type="module">`). O SDK do Supabase é importado via CDN. Isso torna o repositório trivial de hospedar em qualquer CDN estático.
+O projeto é uma aplicação web estática com separação clara entre marcação, estilo e lógica. O front-end é composto por HTML, CSS e JavaScript puros, organizados em diretórios dedicados. O SDK do Supabase é importado via CDN a partir do `index.html`. Essa abordagem mantém o repositório simples e o deploy trivial em qualquer CDN estático.
 
 ```
-tropinha/
+Escolaecosistemadigital/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml      # Deploy automático no push para main
-├── index.html              # Toda a aplicação — SPA autocontida
-├── .env.example            # Referência das variáveis (não commitar o .env real)
+│       └── deploy.yml          # Deploy automático no push para main
+├── assets/
+│   ├── css/
+│   │   └── style.css           # Estilos globais da aplicação
+│   └── js/
+│       └── main.js             # Lógica principal da aplicação
+├── public/
+│   └── images/
+│       ├── favicon.ico         # Ícone do site
+│       └── .gitkeep
+├── src/
+│   ├── components/
+│   │   └── .gitkeep            # Componentes reutilizáveis (a popular)
+│   └── pages/
+│       └── .gitkeep            # Páginas da aplicação (a popular)
+├── .gitignore
+├── index.html                  # Ponto de entrada da SPA
 └── README.md
 ```
 
@@ -83,11 +97,11 @@ O projeto depende de três serviços externos, todos com plano gratuito suficien
 
 **Cloudinary** armazena todas as imagens (posts, avatares, questões, blocos de conteúdo). O front-end faz upload direto usando um preset não-assinado — o banco guarda apenas a URL `secure_url` retornada. Imagens nunca são armazenadas em base64 no banco.
 
-**GitHub Pages** hospeda o `index.html` estático. O workflow `.github/workflows/deploy.yml` usa `peaceiris/actions-gh-pages@v3` para publicar automaticamente a cada push na branch `main`.
+**GitHub Pages** hospeda os arquivos estáticos. O workflow `.github/workflows/deploy.yml` usa `peaceiris/actions-gh-pages@v3` para publicar automaticamente a cada push na branch `main`.
 
 ### Banco de dados — tabelas principais
 
-O schema completo está documentado em `TROPINHA_SPEC_TECNICA.md`. As tabelas centrais são:
+As tabelas centrais são:
 
 `usuarios` · `publicacoes` · `reacoes` · `comentarios` · `curtidas_comentario` · `compartilhamentos` · `materiais` · `simulados` · `questoes` · `tentativas_simulado` · `logs` · `conteudo_abas` · `materias` · `sim_arquivos`
 
@@ -99,9 +113,9 @@ A view `questoes_sem_gabarito` expõe as questões sem o campo `correta`. Ela us
 
 ### Configuração das constantes
 
-As únicas variáveis de configuração ficam no topo do `<script>` dentro do `index.html`:
+As variáveis de configuração ficam no topo do `main.js`, dentro de `assets/js/`:
 
-```javascript
+```js
 const SUPABASE_URL     = 'https://xxxx.supabase.co';
 const SUPABASE_ANON    = 'sb_publishable_...';
 const CLOUDINARY_CLOUD = 'nome-do-cloud';
@@ -121,8 +135,4 @@ Como o site é privado, usuários são criados pelo admin diretamente no painel 
 
 ---
 
-<div align="center">
-
 *Tropinha — feito com 🐾 para quem estuda junto.*
-
-</div>
