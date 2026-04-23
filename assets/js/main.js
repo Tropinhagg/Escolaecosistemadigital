@@ -1,4 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
+import { initBackgroundCarousel } from './carousel-bg.js';
 
 /* ── CONFIGURAÇÃO ── */
 const SUPABASE_URL     = 'https://naxivfgaomwmbkiypysa.supabase.co';
