@@ -29,8 +29,6 @@ const CAROUSEL_MEDIA = [
   {
     type: 'image',
     url:  'https://res.cloudinary.com/dnq9s0g7v/image/upload/v1776900361/michael-afonso-rR95ZJbFE14-unsplash_cxilmw.jpg',
-  },
-  {
     type: 'image',
     url:  'https://res.cloudinary.com/dnq9s0g7v/image/upload/v1776899666/kay-mayer-RfGk36Fsd8g-unsplash_cpamq6.jpg',
   },
