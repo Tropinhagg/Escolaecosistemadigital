@@ -1,6 +1,13 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
 import { initBackgroundCarousel } from './carousel-bg.js';
 
+/* ══════════════════════════════════════════
+   CARROSSEL DE FUNDO
+   Deve ser a PRIMEIRA coisa a executar para que o fundo
+   já esteja presente enquanto o Supabase autentica o usuário.
+══════════════════════════════════════════ */
+initBackgroundCarousel();
+
 /* ── CONFIGURAÇÃO ── */
 const SUPABASE_URL     = 'https://naxivfgaomwmbkiypysa.supabase.co';
 const SUPABASE_ANON    = 'sb_publishable_wzqtvbMtrScPNHRumTBCcA_eQ5sY3K6';
@@ -946,7 +953,7 @@ window.selecionarQuestao = async (id) => {
 function renderizarEditorForm(q) {
   const painel = document.getElementById('editor-questao-painel');
   const letras = ['A','B','C','D','E'];
-  const altsHtml = (q.alternativas||[]).map((alt,i) => `<div class="alt-editor-row"><input class="alt-editor-radio" type="radio" name="alt-correta" value="${i}" ${q.correta===i?'checked':''} /><input type="text" class="alt-editor-inp" data-idx="${i}" value="${esc(alt)}" placeholder="Alternativa ${letras[i]}" /><button class="btn-danger btn-sm btn-icon" onclick="removerAlternativa(${i})">✕</button></div>`).join('');
+  const altsHtml = (q.alternativas||[]).map((alt,i) => `<div class="alt-editor-row"><input class="alt-editor-radio" type="radio" name="alt-correta" value="${i}" ${q.correta===i?'checked':''} /><input type="text" class="alt-editor-inp" data-idx="${i}" value="${esc(alt)}" placeholder="Alternativa ${letras[i]}" /></div>`).join('');
   const imgsExistHtml = (q.imagens||[]).map((u,i) => `<div class="pending-img-wrap"><img src="${esc(u)}" alt="" /><button class="pending-img-remove" onclick="removerImgQuestao(${i})">✕</button></div>`).join('');
   painel.innerHTML = `<div class="editor-form"><div style="margin-bottom:16px;"><label>Enunciado</label><textarea id="q-enunciado" rows="5">${esc(q.enunciado||'')}</textarea></div><div style="margin-bottom:16px;"><label>Alternativas <small style="color:var(--text-muted);text-transform:none;">(marque a correta)</small></label><div id="alts-editor">${altsHtml}</div><button class="btn-ghost btn-sm" id="btn-add-alt" style="margin-top:8px;" ${(q.alternativas||[]).length>=5?'disabled':''}>+ Alternativa</button></div><div style="margin-bottom:16px;"><label>Ordem</label><input type="number" id="q-ordem" value="${q.ordem||1}" style="width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-family:inherit;font-size:14.5px;outline:none;" /></div><div style="margin-bottom:16px;"><label>Imagens</label><div id="editor-q-imgs">${imgsExistHtml}</div><button class="btn-ghost btn-sm" id="btn-q-add-img" style="margin-top:8px;">+ Imagem</button></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;"><button class="btn-ghost" onclick="cancelarEdicaoQuestao()">Cancelar</button><button class="btn-primary" id="btn-salvar-questao" style="width:auto;">Salvar questão</button></div></div>`;
   document.getElementById('btn-add-alt').addEventListener('click', () => adicionarAlternativa());
