@@ -1,57 +1,56 @@
 /* ================================================================
-   CARROSSEL DE FUNDO — crossfade entre imagens e vídeos
-   Funciona tanto em #tela-login quanto em #main-app
+   carousel-bg.css
+   
+   ARQUITETURA: um único #bg-carousel é inserido como primeiro filho
+   do <body> pelo JavaScript, com position: fixed cobrindo toda a
+   viewport. Login e main-app ficam em cima dele com fundo
+   transparente. O fundo nunca some ao trocar de tela porque ele
+   pertence ao <body>, não a nenhuma tela específica.
    ================================================================ */
 
-/* O host (tela-login ou main-app) precisa ser o contexto de empilhamento */
-#tela-login,
-#main-app {
-  position: relative;
-  isolation: isolate; /* cria novo stacking context sem afetar z-index dos filhos */
+/* ----------------------------------------------------------------
+   Container do carrossel: fixado na viewport para sempre
+   z-index: 0 = base da pilha. Tudo o mais fica acima.
+   ---------------------------------------------------------------- */
+#bg-carousel {
+  position: fixed;
+  inset: 0;           /* equivale a top:0; right:0; bottom:0; left:0 */
+  z-index: 0;
+  overflow: hidden;
 }
 
 /* ----------------------------------------------------------------
-   Container do carrossel: ocupa 100% do pai e fica atrás de tudo
+   Cada slide: absolutamente posicionado dentro do container,
+   invisível por padrão. O CSS declara a transição; o JS apenas
+   adiciona/remove a classe .active. O browser interpola sozinho.
    ---------------------------------------------------------------- */
-.bg-carousel {
-  position: absolute;
-  inset: 0;           /* top/right/bottom/left: 0 de uma vez */
-  z-index: -2;        /* atrás do overlay e do conteúdo */
-  overflow: hidden;   /* corta qualquer vazamento de borda */
-}
-
-/* ----------------------------------------------------------------
-   Cada slide (imagem ou vídeo): empilhados, invisíveis por padrão
-   ---------------------------------------------------------------- */
-.bg-carousel__slide {
+.bgc-slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  /* O dissolve acontece inteiramente no CSS — o JS só troca a classe */
-  transition: opacity 1.6s ease-in-out;
-  will-change: opacity; /* sugere ao browser para usar GPU */
+  transition: opacity 1.8s ease-in-out;
+  will-change: opacity; /* dica para usar GPU nessa propriedade */
 }
 
-/* Slide ativo — apenas um de cada vez */
-.bg-carousel__slide.active {
+.bgc-slide.active {
   opacity: 1;
 }
 
 /* ----------------------------------------------------------------
-   Imagem de fundo: cobre tudo, centralizada, sem distorção
+   Imagem: cobre todo o slide sem distorção.
+   Ken Burns = zoom lentíssimo que faz a foto "respirar".
+   Aplicado apenas em imagens; vídeos já têm movimento próprio.
    ---------------------------------------------------------------- */
-.bg-carousel__slide img {
+.bgc-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
-  /* Ken Burns muito suave — dá vida sem distrair */
-  animation: kenburns 18s ease-in-out infinite alternate;
+  animation: bgc-kenburns 22s ease-in-out infinite alternate;
 }
 
-/* Sem Ken Burns em slides de vídeo — o movimento já vem do conteúdo */
-.bg-carousel__slide video {
+.bgc-slide video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -59,65 +58,115 @@
   display: block;
 }
 
-@keyframes kenburns {
-  from { transform: scale(1.00) translate(0, 0); }
-  to   { transform: scale(1.06) translate(-1%, 1%); }
+@keyframes bgc-kenburns {
+  from { transform: scale(1.00) translate(0px, 0px); }
+  to   { transform: scale(1.07) translate(-1.5%, 1%); }
 }
 
 /* ----------------------------------------------------------------
-   Overlay escuro sobre o carrossel — garante legibilidade
-   Fica entre o carrossel (z: -2) e o conteúdo (z: auto)
+   Overlay escuro: fica ENTRE o carrossel (z:0) e o conteúdo (z:10+).
+   É ele que garante legibilidade de textos e cards sobre qualquer foto.
+   pointer-events: none = cliques passam direto para o conteúdo.
    ---------------------------------------------------------------- */
-.bg-carousel-overlay {
-  position: absolute;
+#bg-carousel-overlay {
+  position: fixed;
   inset: 0;
-  z-index: -1;  /* acima do carrossel, abaixo do conteúdo real */
-  /* Gradiente direcional: mais escuro embaixo (onde ficam forms/cards) */
+  z-index: 1;
   background: linear-gradient(
     160deg,
-    rgba(0, 0, 0, 0.45) 0%,
-    rgba(0, 0, 0, 0.62) 100%
+    rgba(0, 0, 0, 0.50) 0%,
+    rgba(0, 0, 0, 0.68) 100%
   );
-  pointer-events: none; /* não intercepta cliques */
-}
-
-/* ----------------------------------------------------------------
-   Indicadores de progresso (bolinhas) — opcional, ativado via JS
-   ---------------------------------------------------------------- */
-.bg-carousel-dots {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 7px;
-  z-index: 10; /* visível acima do conteúdo */
   pointer-events: none;
 }
 
-.bg-carousel-dots__dot {
+/* ----------------------------------------------------------------
+   Pontinhos indicadores: posicionados no rodapé da viewport.
+   z-index alto para ficarem acima de qualquer conteúdo.
+   ---------------------------------------------------------------- */
+#bg-carousel-dots {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.bgc-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.30);
   transition: background 0.4s ease, transform 0.4s ease;
 }
 
-.bg-carousel-dots__dot.active {
-  background: rgba(255, 255, 255, 0.90);
-  transform: scale(1.35);
+.bgc-dot.active {
+  background: rgba(255, 255, 255, 0.88);
+  transform: scale(1.4);
 }
 
 /* ================================================================
-   AJUSTE: main-app tem header fixo — o carrossel deve ser fixed
-   para cobrir a viewport inteira (não apenas o <main>)
+   AJUSTE NAS TELAS DA APLICAÇÃO
+   
+   Para o carrossel vazar por trás do login e do painel principal,
+   essas telas precisam de:
+     - z-index acima do overlay (z > 1)
+     - background transparente (para não cobrir o carrossel)
+   
+   Os cards (.login-card, .bloco-card, etc.) já têm seus próprios
+   fundos opacos definidos no style.css — continuam aparecendo
+   normalmente por cima do carrossel.
    ================================================================ */
-#main-app .bg-carousel,
-#main-app .bg-carousel-overlay {
-  position: fixed; /* segue a viewport mesmo com scroll */
-  z-index: -2;     /* preserva a hierarquia */
+
+/* Tela de login: removemos o background-image estático que estava
+   definido no style.css (a foto antiga da floresta). O carrossel
+   agora cuida disso. Mantemos display:flex para centralizar o card. */
+#tela-login {
+  position: relative;
+  z-index: 10;
+  /* !important para sobrescrever o background-image do style.css */
+  background-image: none !important;
+  background-color: transparent !important;
 }
 
-#main-app .bg-carousel-overlay {
-  z-index: -1;
+/* Main app: mesmo princípio. O background vem do carrossel. */
+#main-app {
+  position: relative;
+  z-index: 10;
+  background-color: transparent !important;
+}
+
+/* Body: limpamos os gradientes decorativos e o padrão de pontos
+   para não aparecerem por cima do carrossel nas bordas.
+   A cor sólida de fallback permanece para quando a imagem carrega. */
+body {
+  background-image: none !important;
+  background-color: #070a11; /* fallback enquanto o carrossel carrega */
+}
+
+/* Header e mobile nav: z-index acima do conteúdo das seções */
+#header {
+  position: sticky; /* mantém o comportamento original do style.css */
+  z-index: 100;
+}
+
+#mobile-nav {
+  position: fixed;
+  z-index: 100;
+}
+
+/* Modais, lightbox e toasts: ficam acima de absolutamente tudo */
+.modal-overlay {
+  z-index: 1000 !important;
+}
+
+#lightbox {
+  z-index: 1100 !important;
+}
+
+#toast-container {
+  z-index: 2000 !important;
 }
