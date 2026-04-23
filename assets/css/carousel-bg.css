@@ -1,0 +1,123 @@
+/* ================================================================
+   CARROSSEL DE FUNDO — crossfade entre imagens e vídeos
+   Funciona tanto em #tela-login quanto em #main-app
+   ================================================================ */
+
+/* O host (tela-login ou main-app) precisa ser o contexto de empilhamento */
+#tela-login,
+#main-app {
+  position: relative;
+  isolation: isolate; /* cria novo stacking context sem afetar z-index dos filhos */
+}
+
+/* ----------------------------------------------------------------
+   Container do carrossel: ocupa 100% do pai e fica atrás de tudo
+   ---------------------------------------------------------------- */
+.bg-carousel {
+  position: absolute;
+  inset: 0;           /* top/right/bottom/left: 0 de uma vez */
+  z-index: -2;        /* atrás do overlay e do conteúdo */
+  overflow: hidden;   /* corta qualquer vazamento de borda */
+}
+
+/* ----------------------------------------------------------------
+   Cada slide (imagem ou vídeo): empilhados, invisíveis por padrão
+   ---------------------------------------------------------------- */
+.bg-carousel__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  /* O dissolve acontece inteiramente no CSS — o JS só troca a classe */
+  transition: opacity 1.6s ease-in-out;
+  will-change: opacity; /* sugere ao browser para usar GPU */
+}
+
+/* Slide ativo — apenas um de cada vez */
+.bg-carousel__slide.active {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------------
+   Imagem de fundo: cobre tudo, centralizada, sem distorção
+   ---------------------------------------------------------------- */
+.bg-carousel__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  /* Ken Burns muito suave — dá vida sem distrair */
+  animation: kenburns 18s ease-in-out infinite alternate;
+}
+
+/* Sem Ken Burns em slides de vídeo — o movimento já vem do conteúdo */
+.bg-carousel__slide video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+@keyframes kenburns {
+  from { transform: scale(1.00) translate(0, 0); }
+  to   { transform: scale(1.06) translate(-1%, 1%); }
+}
+
+/* ----------------------------------------------------------------
+   Overlay escuro sobre o carrossel — garante legibilidade
+   Fica entre o carrossel (z: -2) e o conteúdo (z: auto)
+   ---------------------------------------------------------------- */
+.bg-carousel-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;  /* acima do carrossel, abaixo do conteúdo real */
+  /* Gradiente direcional: mais escuro embaixo (onde ficam forms/cards) */
+  background: linear-gradient(
+    160deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
+  pointer-events: none; /* não intercepta cliques */
+}
+
+/* ----------------------------------------------------------------
+   Indicadores de progresso (bolinhas) — opcional, ativado via JS
+   ---------------------------------------------------------------- */
+.bg-carousel-dots {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  z-index: 10; /* visível acima do conteúdo */
+  pointer-events: none;
+}
+
+.bg-carousel-dots__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.4s ease, transform 0.4s ease;
+}
+
+.bg-carousel-dots__dot.active {
+  background: rgba(255, 255, 255, 0.90);
+  transform: scale(1.35);
+}
+
+/* ================================================================
+   AJUSTE: main-app tem header fixo — o carrossel deve ser fixed
+   para cobrir a viewport inteira (não apenas o <main>)
+   ================================================================ */
+#main-app .bg-carousel,
+#main-app .bg-carousel-overlay {
+  position: fixed; /* segue a viewport mesmo com scroll */
+  z-index: -2;     /* preserva a hierarquia */
+}
+
+#main-app .bg-carousel-overlay {
+  z-index: -1;
+}
