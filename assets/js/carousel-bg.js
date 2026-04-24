@@ -1,25 +1,20 @@
 /**
  * carousel-bg.js
  * ==============
- * Carrossel de fundo com crossfade entre imagens e vídeos do Cloudinary.
+ * Carrossel de fundo com crossfade — APENAS NA TELA DE LOGIN.
  *
  * ARQUITETURA
  * -----------
- * Um único container #bg-carousel é injetado diretamente no <body>
- * (antes de qualquer outro elemento), fixado com position: fixed.
- * Isso significa que ele é completamente independente de qual tela
- * está visível — login, painel principal, tela de simulado, etc.
- * O fundo nunca some ao trocar de tela.
+ * O carrossel é injetado como primeiro filho do #tela-login.
+ * Como o #tela-login tem position:relative e min-height:100vh
+ * (definido no style.css), o carrossel absolute preenche
+ * exatamente a viewport enquanto o login está visível.
+ * O #main-app não é afetado em nada — mantém seu visual original.
  *
- * COMO ADICIONAR MÍDIAS
- * ---------------------
- * Edite o array CAROUSEL_MEDIA abaixo. Duas regras simples:
- *   - Imagens: qualquer formato suportado pelo browser (jpg, webp, png)
- *   - Vídeos:  SEMPRE use .mp4 (H.264). É o único formato que o Safari
- *              no iOS toca com autoplay sem interação do usuário.
- *              O Cloudinary converte qualquer upload para .mp4
- *              automaticamente — basta trocar a extensão na URL,
- *              mesmo que o arquivo original seja .mov ou .webm.
+ * FORMATO DE VÍDEO
+ * ----------------
+ * Use sempre .mp4 (H.264). O Cloudinary converte qualquer upload
+ * automaticamente — basta trocar a extensão na URL.
  */
 
 // ================================================================
@@ -29,8 +24,6 @@ const CAROUSEL_MEDIA = [
   {
     type: 'image',
     url:  'https://res.cloudinary.com/dnq9s0g7v/image/upload/v1776900361/michael-afonso-rR95ZJbFE14-unsplash_cxilmw.jpg',
-    type: 'image',
-    url:  'https://res.cloudinary.com/dnq9s0g7v/image/upload/v1776899666/kay-mayer-RfGk36Fsd8g-unsplash_cpamq6.jpg',
   },
   // Adicione mais itens abaixo:
   // {
@@ -43,57 +36,53 @@ const CAROUSEL_MEDIA = [
   // },
 ];
 
-// Tempo (ms) que cada slide permanece visível antes do dissolve.
-// O dissolve em si dura 1.8s (definido no CSS), então use no mínimo 4000.
+// Tempo (ms) que cada slide fica visível antes do dissolve.
+// O dissolve dura 1.8s (CSS), então use no mínimo 4000.
 const SLIDE_DURATION_MS = 7000;
 
-// Mostrar bolinhas indicadoras de progresso?
+// Mostrar bolinhas indicadoras?
 const SHOW_DOTS = true;
 
 // ================================================================
-//  ▶ CONSTRUÇÃO DO DOM
+//  ▶ LÓGICA
 // ================================================================
 
 function buildCarousel() {
-  // Proteção contra dupla inicialização (ex: hot reload durante dev)
+  // O carrossel só faz sentido dentro do #tela-login
+  const telaLogin = document.getElementById('tela-login');
+  if (!telaLogin) return;
+
+  // Proteção contra dupla inicialização
   if (document.getElementById('bg-carousel')) return;
 
-  // Guard: sem mídias não há nada a fazer
   if (!CAROUSEL_MEDIA || CAROUSEL_MEDIA.length === 0) return;
 
-  // ── 1. Criar o container principal ────────────────────────────
+  // ── Container do carrossel ────────────────────────────────────
   const carousel = document.createElement('div');
   carousel.id = 'bg-carousel';
 
-  // ── 2. Criar um slide para cada item da lista ─────────────────
+  // ── Um slide para cada mídia ──────────────────────────────────
   const slides = CAROUSEL_MEDIA.map((item, index) => {
     const slide = document.createElement('div');
     slide.className = 'bgc-slide';
-
-    // O primeiro slide começa visível imediatamente
-    if (index === 0) slide.classList.add('active');
+    if (index === 0) slide.classList.add('active'); // primeiro começa visível
 
     if (item.type === 'video') {
-      // muted + autoplay + playsinline são obrigatórios para iOS.
-      // Sem eles, o Safari bloqueia o autoplay silenciosamente.
       const video = document.createElement('video');
       video.src         = item.url;
-      video.muted       = true;
+      video.muted       = true;       // obrigatório para autoplay funcionar
       video.autoplay    = true;
       video.loop        = true;
-      video.playsInline = true;
-      // aria-hidden: este elemento é puramente decorativo
+      video.playsInline = true;       // sem fullscreen automático no iOS
       video.setAttribute('aria-hidden', 'true');
       video.setAttribute('tabindex', '-1');
       slide.appendChild(video);
     } else {
       const img = document.createElement('img');
       img.src = item.url;
-      img.alt = ''; // alt vazio = decorativo para leitores de tela
+      img.alt = '';
       img.setAttribute('aria-hidden', 'true');
-      // Lazy loading para slides que não são o primeiro,
-      // para não atrasar o carregamento inicial da página
-      if (index > 0) img.loading = 'lazy';
+      if (index > 0) img.loading = 'lazy'; // não atrasa o carregamento inicial
       slide.appendChild(img);
     }
 
@@ -101,11 +90,11 @@ function buildCarousel() {
     return slide;
   });
 
-  // ── 3. Criar o overlay escuro semitransparente ─────────────────
+  // ── Overlay escuro (definido e estilizado no CSS) ─────────────
   const overlay = document.createElement('div');
   overlay.id = 'bg-carousel-overlay';
 
-  // ── 4. Criar os pontinhos indicadores (opcional) ───────────────
+  // ── Pontinhos indicadores (opcionais) ─────────────────────────
   let dotsContainer = null;
   let dotEls = [];
 
@@ -122,48 +111,32 @@ function buildCarousel() {
     });
   }
 
-  // ── 5. Injetar no <body> antes de todos os outros elementos ────
-  // insertBefore(novoElemento, referência) insere ANTES da referência.
-  // body.firstChild é o primeiro elemento existente (normalmente #tela-login).
-  // O carrossel e overlay ficam fisicamente no início do DOM, mas os
-  // z-indexes do CSS fazem o empilhamento correto.
-  document.body.insertBefore(overlay, document.body.firstChild);
-  document.body.insertBefore(carousel, document.body.firstChild);
+  // ── Injetar dentro do #tela-login, antes de tudo ─────────────
+  // insertBefore(novo, referência) coloca o novo ANTES da referência.
+  // Assim o carrossel fica atrás do .login-card que já existe no HTML.
+  telaLogin.insertBefore(overlay, telaLogin.firstChild);
+  telaLogin.insertBefore(carousel, telaLogin.firstChild);
+  if (dotsContainer) telaLogin.appendChild(dotsContainer);
 
-  // Os pontinhos vão no final do body para não interferir no fluxo
-  if (dotsContainer) {
-    document.body.appendChild(dotsContainer);
-  }
-
-  // ── 6. Lógica de rotação ───────────────────────────────────────
-  // Com apenas 1 mídia, não há o que rotacionar
-  if (CAROUSEL_MEDIA.length <= 1) return;
+  // ── Rotação entre slides ──────────────────────────────────────
+  if (CAROUSEL_MEDIA.length <= 1) return; // só 1 mídia: sem timer necessário
 
   let currentIndex = 0;
 
   function goToSlide(nextIndex) {
-    // Remove o estado ativo do slide e ponto atuais
     slides[currentIndex].classList.remove('active');
     if (dotEls.length) dotEls[currentIndex].classList.remove('active');
 
     currentIndex = nextIndex;
 
-    // Ativa o próximo
     slides[currentIndex].classList.add('active');
     if (dotEls.length) dotEls[currentIndex].classList.add('active');
 
-    // Para vídeos: força o play. Alguns browsers pausam vídeos
-    // que ficam com opacity: 0, então precisamos reiniciar.
+    // Força o play em vídeos que o browser pode ter pausado
     const videoEl = slides[currentIndex].querySelector('video');
-    if (videoEl) {
-      // .play() retorna uma Promise. A rejeição é silenciosa para
-      // não poluir o console quando o browser bloqueia o autoplay.
-      videoEl.play().catch(() => {});
-    }
+    if (videoEl) videoEl.play().catch(() => {});
   }
 
-  // O módulo aritmético (% length) faz o índice voltar para 0
-  // automaticamente após o último slide — loop infinito sem if.
   setInterval(() => {
     goToSlide((currentIndex + 1) % CAROUSEL_MEDIA.length);
   }, SLIDE_DURATION_MS);
@@ -174,13 +147,9 @@ function buildCarousel() {
 // ================================================================
 
 /**
- * Inicializa o carrossel de fundo.
- *
- * Deve ser chamada UMA ÚNICA VEZ no início do main.js,
- * antes de qualquer outra lógica da aplicação.
- *
+ * Chame esta função uma única vez no início do main.js.
  * Módulos ES já executam após o DOM estar pronto, mas
- * adicionamos a verificação de readyState por segurança.
+ * adicionamos a verificação por segurança.
  */
 export function initBackgroundCarousel() {
   if (document.readyState === 'loading') {
