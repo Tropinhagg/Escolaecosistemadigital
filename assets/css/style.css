@@ -29,11 +29,15 @@ body {
   font-weight: 400;
   font-size: 15px;
   color: var(--text);
-  /* background-image REMOVIDO — o carrossel cuida disso agora.
-     Mantemos apenas a cor sólida de fallback enquanto as imagens carregam. */
   background-color: var(--bg);
   min-height: 100vh;
   overflow-x: hidden;
+  /* Gradientes e padrão de pontos restaurados — dão profundidade ao painel principal */
+  background-image:
+    radial-gradient(circle at 10% 15%, rgba(124,158,245,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(167,139,250,0.07) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(124,158,245,0.03) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='1' cy='1' r='0.8' fill='rgba(255,255,255,0.025)'/%3E%3C/svg%3E");
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -54,9 +58,11 @@ button { cursor: pointer; font-family: inherit; }
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
-  /* background-image REMOVIDO — o carrossel substituiu a imagem estática.
-     O fundo agora é transparente para o carrossel aparecer por baixo. */
-  background-color: transparent;
+  /* background-image REMOVIDO daqui — o carousel-bg.js injeta o carrossel
+     como filho absolute dentro deste elemento, substituindo a foto estática.
+     O overlay escuro (radial-gradient) também foi movido para o carousel-bg.css
+     como #bg-carousel-overlay, mantendo exatamente a mesma aparência visual. */
+  background-color: #070a11; /* fallback enquanto a primeira imagem carrega */
 }
 .login-card {
   background: var(--bg-2); border: 1px solid var(--border);
